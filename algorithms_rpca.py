@@ -15,23 +15,12 @@ GPU = False
 from images import data
 import randlin
 from r_pca import R_pca  # import new
+from config import Config
 
 class fringe(data):
-
-    def __init__(self, odometer_file=data.ODOMETER_FILE,
-                 rootdir=data.ROOTDIR,
-                 chipmask_file=data.CHIPMASK_FILE,
-                 ccdnum=data.CCDNUM,
-                 small=True
-                 ):
-
+    def __init__(self, config):
         # Initialize parent data class
-        super().__init__(odometer_file=odometer_file,
-                         rootdir=rootdir,
-                         chipmask_file=chipmask_file,
-                         ccdnum=ccdnum,
-                         small=small)
-
+        super().__init__(config=config)
         return
 
     def raw_defringe(self, images, mask=None, nxy=None, robust=False, keep_background=False):
@@ -63,10 +52,11 @@ class fringe(data):
             else:
                 coeffs = self.regress(images[:, i], mfringe, mask=mask, robust=robust)
             if keep_background:
-                fimages[:, i] = images[:, i] - coeffs[1] * mfringe  # joe:only remove fringe pattern
+                # joe:only remove fringe pattern
+                fimages[:, i] = images[:, i] - coeffs[1] * mfringe
             else:
-                fimages[:, i] = images[:, i] - coeffs[0] - coeffs[
-                    1] * mfringe  # joe:further remove background c[0] term
+                # joe:further remove background c[0] term
+                fimages[:, i] = images[:, i] - coeffs[0] - coeffs[1] * mfringe
 
         return fimages
 
@@ -205,7 +195,8 @@ class fringe(data):
 
         return coeff
 
-    def fringes(self, images, masks, tol=1e-10, rank=None, unshrinking=True, sigmas=None, lfac=1.0, random=None):
+    def fringes(self, images, masks, tol=1e-10, rank=None, unshrinking=True,
+                sigmas=None, lfac=1.0, random=None):
         """
         # joe: 使用原始图像（已经去除了中值）进行defringe
         Starts from a collection of images and masks,
@@ -277,8 +268,8 @@ class fringe(data):
     ## =====================================
     # r_pca for fringe pattern
     ## =====================================
-    def fringes_pcp(self, images, masks, tol=None, unshrinking=False,
-                    sigmas=None, random=None, max_iter=2500, iter_print=100):
+    def fringes_pcp(self, images, masks, sigmas=None, tol=None, unshrinking=False,
+                    random=None, max_iter=2500, iter_print=100):
         """
         joe: 使用 PCP 方法求 fringe pattern (final)
         """
@@ -531,40 +522,36 @@ class fringe(data):
         self.save_to_fits(pcaDefringeImg, output_dir=savePath_pcaDefringe, img_size=selfWidth)
         return
 
-def doit(ccdnum=13, rank=4, small=True, unshrinking=False):
+def doit(config):
     """
     Example driver routine
     """
     # First instantiate fringe class, reads and prepare all images, masks, etc.
-    g = fringe(ccdnum=ccdnum, small=small)
+    g = fringe(ccdnum=config.CCDNUM, small=config.small)
 
     # raw fringe pattern
-    fimages = g.raw_defringe(g.images, mask=g.chipmask, robust=True)
+    fimages = g.raw_defringe(g.images, mask=g.chipmask, nxy=config.nxy,
+                             robust=config.robust, keep_background=config.keep_background)
 
     # mask (include： source mask + bad pixel mask)
-    masks = g.create_masks(fimages, g.chipmask, robust=True)
+    masks = g.create_masks(fimages, g.chipmask, kappa=config.kappa, tol=config.tol,
+                        include_inputmask=config.include_inputmask, robust=config.robust)
 
-    # 计算每张图像的标准差（更准确的做法）
+    # 计算每张图像的标准差（更准确，能去除异常值干扰）
     sigmas = cp.asarray([g.robust_sigma(fimages[:, i]) for i in range(fimages.shape[1])])
 
     # joe: 计算 exact fringe pattern.
-    lowrank_mt, spare_mt = g.fringes_pcp(g.images, masks, tol=1e-12,unshrinking=unshrinking,
-                      sigmas=sigmas, max_iter=2500, iter_print=100)
-
-    # # #%% do PCP(Robust PCA) method
-    # r = R_pca(g.images)
-    # L, S = r.fit(max_iter=100, iter_print=100)
-    # # visually inspect results (requires matplotlib)
-    # # r.plot_fit()
-    # # plt.show()
+    lowrank_mt, spare_mt = g.fringes_pcp(g.images, masks, sigmas=sigmas, tol=config.tol,
+            unshrinking=config.unshrinking, max_iter=config.max_iter, iter_print=config.iter_print)
 
     # 获得最终版本的 defringe images
-    pca_defringe = g.mine_defringe(g.images, lowrank_mt, mask=g.chipmask, robust=True)  # defringe图像
+    pca_defringe = g.mine_defringe(g.images, lowrank_mt, mask=g.chipmask, robust=config.robust)  # defringe图像
 
-    output_fits_path = r'D:\Datasets\output_image'  # 替换为你的目标路径
-    g.save_all_result(output_fits_path, g.images, lowrank_mt, spare_mt, pca_defringe)
+    # 保存结果
+    g.save_all_result(config.output_fits_path, g.images, lowrank_mt, spare_mt, pca_defringe)
 
     return
 
 if __name__ == "__main__":
-    doit()
+    config = Config()
+    doit(config)

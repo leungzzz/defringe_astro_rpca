@@ -1,5 +1,8 @@
+import os
+
 from astropy.io import fits as pf
 import numpy as nm
+from config import Config
 
 # try:
 #     import cupy as cp
@@ -20,35 +23,22 @@ class data(object):
     and form the data matrix to be processed for fringe removal
     """
 
-    ODOMETER_FILE = "fringe_data_zzj\\load_img.txt"
-    ROOTDIR = r"G:\我的云端硬盘\GoogleDrive_Codes\defringe_main_lzzh\\"
-    CHIPMASK_FILE = "masks\\2003A.mask.0.36.02.fits"  # 这个文件是一个MEF文件（Multi Extend File), 经查看，一共有35个Extends.
-    # THESE ARE SPECIFIC TO THE MEGACAM CHIPS, SHOULD BE ADAPTED TO YOUR OWN NEEDS
-
-    CCDNUM = 13  # 分析多个不同拍摄时间、第几张CCD图
-    OVERSCAN_X_MIN = 32  # ?
-    OVERSCAN_X_MAX = 2080  # ?
-    OVERSCAN_Y_MIN = 0  # ?
-    OVERSCAN_Y_MAX = 4612  # ?
-    WINSMALL = 500  # 窗口
-
-    def __init__(self, odometer_file=ODOMETER_FILE, rootdir=ROOTDIR, chipmask_file=CHIPMASK_FILE, ccdnum=CCDNUM,
-                 small=True):
+    def __init__(self, config):
 
         # First create list of image names. We will assume here that the images are in 'split' format,
         # i.e. one separate FITS file per CCD.
         # joe: 生成图像names的目录，以list形式
         # joe: 这里的 ori_image 图像到底是什么？没有经过defringe处理，包含fringe波纹的图像\
-        self.names = self.create_image_names(rootdir + odometer_file, rootdir + 'nodefringe', [ccdnum])
+        self.names = self.create_image_names_lzz(config.rootDir, config.oriDir)
         # Now read the images, and store them as column vectors of the output matrix. Thus, each column of the matrix
         # contains all pixels of a given image.
-        self.images = self.read_images(self.names, small=small)
+        self.images = self.read_images(self.names, config)
         self.ori_image = self.images
 
         # Now do the same for images corrected with a robust regression on a single median fringe template
         # joe: 这里的 elximages 图像是什么？ 经过标准流程处理，已经去除了fringe波纹的图像\
-        self.elxnames = self.create_image_names(rootdir + odometer_file, rootdir + 'elixir-defringe', [ccdnum])
-        elximages = self.read_images(self.elxnames, small=small)
+        self.elxnames = self.create_image_names_lzz(config.rootDir, config.elixirDataDir)
+        elximages = self.read_images(self.elxnames, config)
         self.elximages = cp.asarray(elximages)
 
         # Remove median per image of elximages, for plotting purposes
@@ -63,42 +53,27 @@ class data(object):
         self.images -= self.image_medians[None, :]  # 相减，减掉了中值（这个中值是多幅图像综合下的中值）
 
         # Now read the corresponding mask for dead/hot pixels, etc.
-        chipmask = self.read_chipmask(rootdir + chipmask_file, ccdnum, small=small)
+        chipmask = self.read_chipmask(config.chipmask_file, config.CCDNUM,
+                                      config.OVERSCAN_X_MIN, config.OVERSCAN_X_MAX,
+                                      config.OVERSCAN_Y_MIN, config.OVERSCAN_Y_MAX,
+                                      config.winsmall, config.cut_overscan, config.small)
         self.chipmask = cp.asarray(chipmask)
 
         return
 
-    def create_image_names(self, odomfile, rootdir, ccdlist, mef=False):
-        """
-        * Function:
-          Store filenames of all the images in a list
+    def create_image_names_lzz(self, rootDir, subfolderDir):
 
-        * Input:
-          odomfile - filename indices of all the images taken during a run
-          rootdir  - where the .fits stored. example: xxx/xxx/nodefringe
-          ccdlist  - 0 to 35
-          mef(optional) - multi-extension fit file
+        images_dir = []
+        image_dir = os.path.join(rootDir, subfolderDir)
+        image_files = os.listdir(image_dir)
+        for file_name in image_files:
+            full_dir = os.path.join(rootDir, subfolderDir, file_name)
+            images_dir.append(full_dir)
 
-        * Output: A list with all the filenames
+        return images_dir
 
-        * Example:
-        names=firstpass.create_image_names('../odomlist_z_14Am01',
-                                            '../z_14Am01_nodefringe',
-                                            [0])
-        """
-        odometers = nm.loadtxt(odomfile, dtype=nm.unicode_)
-        ccdlist = ["%02d" % int(i) for i in ccdlist]
-        image_names = []
-        for odom in odometers:
-            if mef:
-                # image_names += [rootdir + '/' + odom + 'p.fits']
-                image_names += [rootdir + '\\' + odom + 'p.fits']
-            else:
-                # image_names += [rootdir + '/' + odom + 'p/' + odom + 'p' + ccd + '.fits' for ccd in ccdlist]
-                image_names += [rootdir + '\\' + odom + 'p\\' + odom + 'p' + ccd + '.fits' for ccd in ccdlist]
-        return image_names
-
-    def read_images(self, image_names, cut_overscan=True, small=False, mef=False, ccd=0):
+    def read_images(self, image_names, x_min, x_max, y_min, y_max, winsmall,
+                    cut_overscan, small, mef, ccd):
         """
         * Function:
           Read data from magacam images. Take data from each image as a column vector,
@@ -121,16 +96,16 @@ class data(object):
                 image = pf.getdata(name)  # Split mode, image in primary hdu
             image = image.T  # joe: transpose operation
             if cut_overscan:
-                image = image[self.OVERSCAN_X_MIN:self.OVERSCAN_X_MAX, self.OVERSCAN_Y_MIN:self.OVERSCAN_Y_MAX]
+                image = image[x_min:x_max, y_min:y_max]
             if small:
-                image = image[:self.WINSMALL, :self.WINSMALL]
-                images.append(cp.reshape(image, (self.WINSMALL * self.WINSMALL,)))
+                image = image[:winsmall, :winsmall]
+                images.append(cp.reshape(image, (winsmall * winsmall,)))
             else:
-                images.append(cp.reshape(image, (
-                    (self.OVERSCAN_X_MAX - self.OVERSCAN_X_MIN) * (self.OVERSCAN_Y_MAX - self.OVERSCAN_Y_MIN),)))
+                images.append(cp.reshape(image, ((x_max - x_min) * (y_max - y_min),)))
         return cp.transpose(cp.asarray(images))
 
-    def read_chipmask(self, MEF, chipnum, cut_overscan=True, small=False):
+    def read_chipmask(self,mask_file, chipnum, x_min, x_max, y_min, y_max, winsmall,
+                      cut_overscan=True, small=False):
         """
         Function:
             Return a mask (as column vector) for specified CCD. Input is a full FP pixel mask as a MEF file.
@@ -146,18 +121,17 @@ class data(object):
 
         """
 
-        f = pf.open(MEF)
+        f = pf.open(mask_file)
         chipmask = cp.asarray(f[chipnum + 1].data, dtype=float)
         chipmask = chipmask.T * 1.0
         f.close()
         if cut_overscan:
-            chipmask = chipmask[self.OVERSCAN_X_MIN:self.OVERSCAN_X_MAX, self.OVERSCAN_Y_MIN:self.OVERSCAN_Y_MAX]
+            chipmask = chipmask[x_min:x_max, y_min:y_max]
         if small:
-            chipmask = chipmask[:self.WINSMALL, :self.WINSMALL]
-            return cp.reshape(chipmask, (self.WINSMALL * self.WINSMALL,))
+            chipmask = chipmask[: winsmall, :winsmall]
+            return cp.reshape(chipmask, (winsmall * winsmall,))
         else:
-            return cp.reshape(chipmask, (
-                (self.OVERSCAN_X_MAX - self.OVERSCAN_X_MIN) * (self.OVERSCAN_Y_MAX - self.OVERSCAN_Y_MIN),))
+            return cp.reshape(chipmask, ((x_max - x_min) * (y_max - y_min),))
         return chipmask
 
     # #%%

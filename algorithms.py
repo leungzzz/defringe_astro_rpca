@@ -18,19 +18,14 @@ from r_pca import R_pca
 
 class fringe(data):
 
-    def __init__(self, odometer_file=data.ODOMETER_FILE,
-                 rootdir=data.ROOTDIR,
-                 chipmask_file=data.CHIPMASK_FILE,
-                 ccdnum=data.CCDNUM,
-                 small=True
-                 ):
+    def __init__(self, rootdir=data.rootDir, oridir=data.oriDataDir,
+                 elixirdir=data.elixirDataDir, chipmask_file=data.CHIPMASK_FILE,
+                 ccdnum=data.CCDNUM, small=True):
 
         # Initialize parent data class
-        super().__init__(odometer_file=odometer_file,
-                         rootdir=rootdir,
-                         chipmask_file=chipmask_file,
-                         ccdnum=ccdnum,
-                         small=small)
+        super().__init__(rootdir=rootdir, oridir=oridir,
+                         elixirdir=elixirdir, chipmask_file=chipmask_file,
+                         ccdnum=ccdnum, small=small)
 
         return
 
@@ -418,12 +413,12 @@ def doit(ccdnum=13, rank=4, small=True, unshrinking=True, lfac=1.0):
     # (otherwise noise level estimates dominated by fringe variations)
     # joe: remove background and median fringe pattern, get roughly defringed images.
     # joe: 结果为 fringe removal image. (减去背景、减去fringe pattern)(并非本文的最终结果)
-    fimages = g.raw_defringe(g.images, mask=g.chipmask, robust=True)
+    fimages = g.raw_defringe(g.images, mask=g.chipmask, robust=config.robust)
 
     # Create source mask from images and chipmask
     # masks 屏蔽了source和chip bad pixels.
     # 注意调整 kappa 值（会影响 mask 的准确度）
-    masks = g.create_masks(fimages, g.chipmask, robust=True)
+    masks = g.create_masks(fimages, g.chipmask, robust=config.robust)
 
     # Compute robust estimates of noise levels using roughly defringed images
     # 每列 fringe removal image 计算一个sigma. (可以理解为是标准差)
@@ -473,6 +468,9 @@ def doit(ccdnum=13, rank=4, small=True, unshrinking=True, lfac=1.0):
 
     return
 
-
-if __name__ == "__main__":
-    doit()
+#
+# if __name__ == "__main__":
+#     ccdnum = 0
+#     small = True
+#     unshrinking = False
+#     doit(ccdnum=ccdnum, small=small, unshrinking=unshrinking)
