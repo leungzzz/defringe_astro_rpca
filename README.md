@@ -1,6 +1,12 @@
 # defringe_astro_rpca
  use rpca to remove fringe pattern.
 
+--- 
+
+### 更新内容
+1. 代码模块化和功能分离。将 `images.py` 中的数据处理功能与 `algorithms_rpca.py` 中的算法实现分开。图像读取和预处理放在 `ImageProcessor` 类中，而将算法实现放在 `FringeRemovalAlgorithm` 类中。
+
+
 ### 可处理的内容
 
 1. 使用 PCP 方法进行defringe

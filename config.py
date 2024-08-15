@@ -1,5 +1,9 @@
 class Config:
     def __init__(self):
+        """
+        Configuration for fringe removal process.
+        """
+
         # General paths and parameters
         self.rootDir = r'C:\Users\Administrator\Desktop'
         self.oriDir = r'nodefringe_data_lzzh\small_part_split_result\p00_1\inputs'
@@ -30,7 +34,7 @@ class Config:
         self.robust = True
 
         # fringes_pcp function
-        self.max_iter = 5000  # 2500 的效果可行，已经试验过~
+        self.max_iter = 500  # 2500 的效果可行，已经试验过~ 5000 更佳
         self.iter_print = 50
 
         ## raw_defringe function (get raw fringe pattern)
