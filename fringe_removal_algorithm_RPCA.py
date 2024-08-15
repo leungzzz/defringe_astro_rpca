@@ -16,22 +16,92 @@ class FringeRemovalAlgorithm:
 
     def raw_defringe(self, images, mask=None, nxy=None, robust=False, keep_background=False):
         npix, nobs = images.shape
-        if mask is not None and images.shape[0] != mask.shape[0]:
-            raise ValueError("Images and mask have incompatible sizes.")
-        mfringe = self._compute_median_fringe(images, mask, nxy)
+        if mask is not None:
+            if images.shape[0] != mask.shape[0]:
+                print("images and mask must have the same shape")
+                return
+        if nxy is not None:
+            if npix != nxy[0] * nxy[1]:
+                print("nxy values are incompatible with image size.")
+                return
+        mfringe = self._raw_fringe(images, mask, nxy)
         fimages = images.copy()
         for i in range(nobs):
-            coeffs = self._regress(images[:, i], mfringe, mask[:, i] if mask is not None else None, robust)
-            fimages[:, i] = images[:, i] - coeffs[1] * mfringe if keep_background else images[:, i] - coeffs[0] - coeffs[1] * mfringe
+            print(f"Raw-defringing image number {i}")
+            if mask.ndim > 1:
+                coeffs = self._regress(images[:,i], mfringe, mask=mask[:,i], robust=robust)
+            else:
+                coeffs = self._regress(images[:,i], mfringe, mask=mask, robust=robust)
+
+            if keep_background:
+                fimages[:, i] = images[:, i] - coeffs[1] * mfringe
+            else:
+                fimages[:, i] = images[:, i] - coeffs[0] - coeffs[1] * mfringe
+
         return fimages
 
-    def _compute_median_fringe(self, images, mask=None, nxy=None):
+
+    def defringe_pcp(self, images, fringe_pattern, mask=None, nxy=None, robust=False,
+                     keep_background=False):
+        """
+        * Function:
+          原图 & Robust_PCA 计算得到的fringe pattern 两者相减
+          减法进行前，需要先对fringe pattern进行regress，
+          原因：这个fp是综合多张图像得到的，需要保证它与ori在coefficient上保持一致
+
+        * Param:
+            image: ori（列）
+            fringe_pattern: 预估的 fringe pattern
+            mask:
+            nxy:
+            robust:
+            keep_background:
+
+        * Return:
+            fimages: 已经完成defringe后的图像
+
+        """
+        npix = images.shape[0]
+        nobs = images.shape[1]
+        if mask is not None:
+            if images.shape[0] != mask.shape[0]:
+                print("images and mask have incompatible sizes.\n")
+                return
+        if nxy is not None:
+            if npix != nxy[0] * nxy[1]:
+                print("nxy values are incompatible with image size.\n")
+                return
+
+        # Fringe pattern from r_pca
+        # mfringe = fringe_pattern    # the dimension have been change
+        mfringe = self._raw_fringe(fringe_pattern, mask=mask, nxy=nxy)
+        fimages = images.copy()
+
+        # Compute regression coefficients, and remove background and fringe pattern
+        for i in range(nobs):
+            print('Raw-defringing image number %d' % i)
+
+            if mask is not None and mask.ndim > 1:
+                coeffs = self._regress(images[:, i], mfringe, mask=mask[:, i], robust=robust)
+            else:
+                coeffs = self._regress(images[:, i], mfringe, mask=mask, robust=robust)
+
+            if keep_background:
+                # joe: only remove fringe pattern
+                fimages[:, i] = images[:, i] - coeffs[1] * mfringe
+            else:
+                # joe: further remove background c[0] term
+                fimages[:, i] = images[:, i] - coeffs[0] - coeffs[1] * mfringe
+        return fimages
+
+    def _raw_fringe(self, images, mask=None, nxy=None):
         fimages = images.copy()
         for i in range(images.shape[1]):
             fimages[:, i] -= np.median(images[:, i])
             if mask is not None:
                 fimages[:, i] *= mask[:, i] if mask.ndim > 1 else mask
         return np.median(fimages, axis=1)
+
 
     def _regress(self, image, mfringe, mask=None, robust=False, niter=10):
         flat_image = image.copy()
@@ -76,7 +146,9 @@ class FringeRemovalAlgorithm:
         npix, nobs = images.shape
         if rank is None:
             rank = 3
+
         U, D, VT = np.linalg.svd(Z, full_matrices=False)
+
         Znew = np.zeros(images.shape, dtype=np.float32)
 
         for i in range(nobs):

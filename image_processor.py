@@ -50,10 +50,19 @@ class ImageProcessor:
             return chipmask.flatten()
 
     def create_masks(self, images, chipmask, kappa=2.0, tol=1e-10, include_inputmask=True, robust=False):
-        npix, nobs = images.shape
-        masks = np.ndarray((npix, nobs), dtype=np.float64)
+        ndim_mask = chipmask.ndim
+        imagemask_mode = False
+        if ndim_mask > 1:
+            imagemask_mode = True
+
+        npix = images.shape[0]
+        nobs = images.shape[1]
+        masks = np.ndarray((npix, nobs), dtype=np.float64)  # create new null array
         for i in range(nobs):
-            masks[:, i] = self._mask_sources(images[:, i], chipmask, kappa, tol, include_inputmask, robust)
+            if imagemask_mode:
+                masks[:, i] = self._mask_sources(images[:, i], chipmask[:, i], kappa, tol, include_inputmask, robust)
+            else:
+                masks[:, i] = self._mask_sources(images[:, i], chipmask, kappa, tol, include_inputmask, robust)
         return masks
 
     def _mask_sources(self, image, mask, kappa=2.0, tol=1e-10, include_inputmask=True, robust=True):

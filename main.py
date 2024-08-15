@@ -29,7 +29,7 @@ def doit(config):
                                          robust=config.robust)
 
     # get median (a robust way)
-    sigmas = np.array([image_processor.robust_sigma(fimages[:, i]) for i in range(fimages.shape[1])])
+    sigmas = np.array([image_processor._robust_sigma(fimages[:, i]) for i in range(fimages.shape[1])])
 
     # core, using pcp to get low rank matrix, sparse matrix
     lowrank_mt, spare_mt = algorithm.fringes_pcp(image_processor.images, masks, sigmas=sigmas,
@@ -37,8 +37,9 @@ def doit(config):
                                                  max_iter=config.max_iter, iter_print=config.iter_print)
 
     # core, using low rank matrix to get defringe image
-    pca_defringe = algorithm.raw_defringe(image_processor.images, lowrank_mt,
-                                          mask=image_processor.chipmask, robust=config.robust)
+    pca_defringe = algorithm.defringe_pcp(image_processor.images, lowrank_mt,
+                                          mask=image_processor.chipmask, nxy=config.nxy,
+                                           robust=config.robust, keep_background=config.keep_background)
 
     # save result
     algorithm.save_all_result(config.output_fits_path, image_processor.images,
