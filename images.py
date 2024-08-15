@@ -32,13 +32,17 @@ class data(object):
         self.names = self.create_image_names_lzz(config.rootDir, config.oriDir)
         # Now read the images, and store them as column vectors of the output matrix. Thus, each column of the matrix
         # contains all pixels of a given image.
-        self.images = self.read_images(self.names, config)
+        self.images = self.read_images(self.names, config.OVERSCAN_X_MIN, config.OVERSCAN_X_MAX,
+                                       config.OVERSCAN_Y_MIN, config.OVERSCAN_Y_MAX, config.WINSMALL,
+                                       config.cut_overscan, config.small, config.mef, config.CCDNUM)
         self.ori_image = self.images
 
         # Now do the same for images corrected with a robust regression on a single median fringe template
         # joe: 这里的 elximages 图像是什么？ 经过标准流程处理，已经去除了fringe波纹的图像\
         self.elxnames = self.create_image_names_lzz(config.rootDir, config.elixirDataDir)
-        elximages = self.read_images(self.elxnames, config)
+        elximages = self.read_images(self.elxnames, config.OVERSCAN_X_MIN, config.OVERSCAN_X_MAX,
+                                       config.OVERSCAN_Y_MIN, config.OVERSCAN_Y_MAX, config.WINSMALL,
+                                       config.cut_overscan, config.small, config.mef, config.CCDNUM)
         self.elximages = cp.asarray(elximages)
 
         # Remove median per image of elximages, for plotting purposes
@@ -56,7 +60,7 @@ class data(object):
         chipmask = self.read_chipmask(config.chipmask_file, config.CCDNUM,
                                       config.OVERSCAN_X_MIN, config.OVERSCAN_X_MAX,
                                       config.OVERSCAN_Y_MIN, config.OVERSCAN_Y_MAX,
-                                      config.winsmall, config.cut_overscan, config.small)
+                                      config.WINSMALL, config.cut_overscan, config.small)
         self.chipmask = cp.asarray(chipmask)
 
         return

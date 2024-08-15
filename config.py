@@ -6,17 +6,17 @@ class Config:
         self.elixirDataDir = r'elixir-defringe_data_lzzh\small_part_split_result\p00_1\inputs'
         self.chipmask_file = r'D:\Datasets\Defringe_data\masks\2003A.mask.0.36.02.fits'
         # self.output_base_dir = r''
-        self.output_fits_path = r'D:\Datasets\output_image'  # Ìæ»»ÎªÄãµÄÄ¿±êÂ·¾¶
+        self.output_fits_path = r'D:\Datasets\output_image'  # æ›¿æ¢ä¸ºä½ çš„ç›®æ ‡è·¯å¾„
 
         # specific megacam chips, should be adaptive to your own needs
 
-        self.CCDNUM = 0  # ·ÖÎö¶à¸ö²»Í¬ÅÄÉãÊ±¼ä¡¢µÚ¼¸ÕÅCCDÍ¼ £¨ºÍÉÏÃæµÄÒªÆ¥Åä£©
+        self.CCDNUM = 0  # åˆ†æå¤šä¸ªä¸åŒæ‹æ‘„æ—¶é—´ã€ç¬¬å‡ å¼ CCDå›¾ ï¼ˆå’Œä¸Šé¢çš„è¦åŒ¹é…ï¼‰
         self.cut_overscan = True # get data without the border details of the image
         self.OVERSCAN_X_MIN = 32  #
         self.OVERSCAN_X_MAX = 2080  #
         self.OVERSCAN_Y_MIN = 0  #
         self.OVERSCAN_Y_MAX = 4612  #
-        self.WINSMALL = 500  # ´°¿Ú
+        self.WINSMALL = 500  # çª—å£
         self.mef = False   # chip mask is MEF or not, default is False.
         self.small = True
         self.unshrinking = False
@@ -30,8 +30,8 @@ class Config:
         self.robust = True
 
         # fringes_pcp function
-        self.max_iter = 2500
-        self.iter_print = 100
+        self.max_iter = 5000  # 2500 çš„æ•ˆæœå¯è¡Œï¼Œå·²ç»è¯•éªŒè¿‡~
+        self.iter_print = 50
 
         ## raw_defringe function (get raw fringe pattern)
         self.keep_background = False

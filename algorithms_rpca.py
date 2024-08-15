@@ -527,7 +527,7 @@ def doit(config):
     Example driver routine
     """
     # First instantiate fringe class, reads and prepare all images, masks, etc.
-    g = fringe(ccdnum=config.CCDNUM, small=config.small)
+    g = fringe(config)
 
     # raw fringe pattern
     fimages = g.raw_defringe(g.images, mask=g.chipmask, nxy=config.nxy,
