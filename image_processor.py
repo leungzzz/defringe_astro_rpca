@@ -12,13 +12,16 @@ class ImageProcessor:
         self.names = self._create_image_names(config.rootDir, config.oriDir)
         self.images = self._read_images(self.names)
         self.ori_images = self.images.copy()
-        self.elxnames = self._create_image_names(config.rootDir, config.elixirDataDir)
-        self.elximages = self._read_images(self.elxnames)
+        # self.elxnames = self._create_image_names(config.rootDir, config.elixirDataDir)
+        # self.elximages = self._read_images(self.elxnames)
         self.image_medians = np.median(self.images, axis=0)
-        self.elximage_medians = np.median(self.elximages, axis=0)
+        # self.elximage_medians = np.median(self.elximages, axis=0)
         self.images -= self.image_medians[None, :]
-        self.elximages -= self.elximage_medians[None, :]
-        self.chipmask = self._read_chipmask()
+        # self.elximages -= self.elximage_medians[None, :]
+        # self.chipmask = self._read_chipmask()
+
+        # joe: 人为创建一幅 mask (全1，相当于无遮罩）
+        self.chipmask = np.ones((self.images.shape[0],)).astype(np.float32)
 
     def _create_image_names(self, rootDir, subfolderDir):
         images_dir = []

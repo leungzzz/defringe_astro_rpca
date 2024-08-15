@@ -3,7 +3,11 @@
 
 --- 
 
-### 更新内容
+### 更新 [22:48]
+1. 处理 `zzj` 带噪声的信号, 无 `chipmask_file`, 直接替换为全 1 矩阵。
+
+
+### 更新 [18:10]
 1. 代码模块化和功能分离。将 `images.py` 中的数据处理功能与 `algorithms_rpca.py` 中的算法实现分开。图像读取和预处理放在 `ImageProcessor` 类中，而将算法实现放在 `FringeRemovalAlgorithm` 类中。
 
 

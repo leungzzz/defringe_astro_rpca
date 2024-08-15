@@ -6,8 +6,8 @@ class Config:
 
         # General paths and parameters
         self.rootDir = r'C:\Users\Administrator\Desktop'
-        self.oriDir = r'nodefringe_data_lzzh\small_part_split_result\p00_1\inputs'
-        self.elixirDataDir = r'elixir-defringe_data_lzzh\small_part_split_result\p00_1\inputs'
+        self.oriDir = r'part_data_just_for_test\ori_data'
+        # self.elixirDataDir = r'elixir-defringe_data_lzzh\small_part_split_result\p00_1\inputs'
         self.chipmask_file = r'D:\Datasets\Defringe_data\masks\2003A.mask.0.36.02.fits'
 
         # 目标路径
@@ -17,10 +17,10 @@ class Config:
 
         self.CCDNUM = 0  # 分析多个不同拍摄时间、第几张CCD图 （和上面的要匹配）
         self.cut_overscan = True # get data without the border details of the image
-        self.OVERSCAN_X_MIN = 32  #
-        self.OVERSCAN_X_MAX = 2080  #
+        self.OVERSCAN_X_MIN = 0  #
+        self.OVERSCAN_X_MAX = 1900  #
         self.OVERSCAN_Y_MIN = 0  #
-        self.OVERSCAN_Y_MAX = 4612  #
+        self.OVERSCAN_Y_MAX = 1900  #
         self.WINSMALL = 500  # 窗口
         self.mef = False   # chip mask is MEF or not, default is False.
         self.small = True
