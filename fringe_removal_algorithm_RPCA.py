@@ -1,4 +1,5 @@
 # fringe_removal_algorithm_RPCA.py
+import logging
 import os
 import numpy as np
 from astropy.io import fits
@@ -18,16 +19,22 @@ class FringeRemovalAlgorithm:
         npix, nobs = images.shape
         if mask is not None:
             if images.shape[0] != mask.shape[0]:
-                print("images and mask must have the same shape")
+                outStr = "images and mask must have the same shape"
+                # print(outStr)
+                logging.info(outStr)
                 return
         if nxy is not None:
             if npix != nxy[0] * nxy[1]:
-                print("nxy values are incompatible with image size.")
+                outStr = "nxy values are incompatible with image size."
+                # print(outStr)
+                logging.info(outStr)
                 return
         mfringe = self._raw_fringe(images, mask, nxy)
         fimages = images.copy()
         for i in range(nobs):
-            print(f"Raw-defringing image number {i}")
+            outStr = f"Raw-defringing image number {i}"
+            # print(outStr)
+            logging.info(outStr)
             if mask.ndim > 1:
                 coeffs = self._regress(images[:,i], mfringe, mask=mask[:,i], robust=robust)
             else:
@@ -65,11 +72,15 @@ class FringeRemovalAlgorithm:
         nobs = images.shape[1]
         if mask is not None:
             if images.shape[0] != mask.shape[0]:
-                print("images and mask have incompatible sizes.\n")
+                outStr = "images and mask have incompatible sizes.\n"
+                # print(outStr)
+                logging.info(outStr)
                 return
         if nxy is not None:
             if npix != nxy[0] * nxy[1]:
-                print("nxy values are incompatible with image size.\n")
+                outStr = "nxy values are incompatible with image size.\n"
+                # print(outStr)
+                logging.info(outStr)
                 return
 
         # Fringe pattern from r_pca
@@ -79,7 +90,9 @@ class FringeRemovalAlgorithm:
 
         # Compute regression coefficients, and remove background and fringe pattern
         for i in range(nobs):
-            print('Raw-defringing image number %d' % i)
+            outStr = f"Raw-defringing image number {i}"
+            # print(outStr)
+            logging.info(outStr)
 
             if mask is not None and mask.ndim > 1:
                 coeffs = self._regress(images[:, i], mfringe, mask=mask[:, i], robust=robust)
@@ -131,13 +144,18 @@ class FringeRemovalAlgorithm:
         if sigmas is None:
             sigmas = np.array([self._robust_sigma((images * masks)[:, i]) for i in range(nobs)])
         scaled_images = images / sigmas[None, :]
-        print('sigmas:', sigmas)
+        outStr = f"sigmas:{sigmas}"
+        # print(outStr)
+        logging.info(outStr)
 
         pcp_object = R_pca(scaled_images)
         lowrank_mt, sparse_mt = pcp_object.fit(tol=tol, max_iter=max_iter, iter_print=iter_print)
 
         if unshrinking:
-            print('Unshrinking...')
+            outStr = "Unshrinking..."
+            # print(outStr)
+            logging.info(outStr)
+
             lowrank_mt = self._unshrink(scaled_images, masks, lowrank_mt, random=random)
 
         return lowrank_mt * sigmas[None, :], sparse_mt
@@ -173,9 +191,13 @@ class FringeRemovalAlgorithm:
             hdul = fits.HDUList([hdu])
             fits_filename = os.path.join(output_dir, f"object_{i + 1}.fits")
             hdul.writeto(fits_filename, overwrite=True)
-            print(f"Saved {fits_filename}")
+            outStr = f"Saved {fits_filename}"
+            # print(outStr)
+            logging.info(outStr)
 
-        print("All FITS files have been saved.")
+        outStrTemp = "All FITS files have been saved."
+        # print(outStrTemp)
+        logging.info(outStrTemp)
 
     def save_all_result(self, savePath, ori, lowRankCoeff, sparseCoeff, pcaDefringeImg, width=500, height=500):
         output_dir = os.path.dirname(savePath)

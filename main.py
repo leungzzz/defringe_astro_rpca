@@ -1,9 +1,22 @@
 # main.py
+import sys
+
 import numpy as np
+import logging
+from datetime import datetime
 
 from config import Config
 from image_processor import ImageProcessor
 from fringe_removal_algorithm_RPCA import FringeRemovalAlgorithm
+
+# 配置日志记录
+log_filename = f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+logging.basicConfig(filename=log_filename,
+                    level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+# 重定向标准输出和标准错误到日志文件
+sys.stdout = open(log_filename, 'a')
+# sys.stderr = open(log_filename, 'a')
 
 def doit(config):
     """
@@ -48,3 +61,6 @@ def doit(config):
 if __name__ == "__main__":
     config = Config()
     doit(config)
+    # 关闭文件流
+    sys.stdout.close()
+    # sys.stderr.close()

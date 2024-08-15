@@ -35,7 +35,7 @@ class Config:
         self.robust = True
 
         # fringes_pcp function
-        self.max_iter = 300  # 2500 的效果可行，已经试验过~ 5000 更佳
+        self.max_iter = 10000  # 2500 的效果可行，已经试验过~ 5000 更佳
         self.iter_print = 50
 
         ## raw_defringe function (get raw fringe pattern)
