@@ -21,15 +21,15 @@ class R_pca:
 
     def __init__(self, D, mu=None, lmbda=None):
         self.D = D
-        self.S = np.zeros(self.D.shape) # ³õÊ¼»¯Ï¡Êè¾ØÕó S ÎªÁã¾ØÕó
-        self.Y = np.zeros(self.D.shape) # ³õÊ¼»¯À­¸ñÀÊÈÕ³ËÊı¾ØÕó Y ÎªÁã¾ØÕó
+        self.S = np.zeros(self.D.shape) # åˆå§‹åŒ–ç¨€ç–çŸ©é˜µ S ä¸ºé›¶çŸ©é˜µ
+        self.Y = np.zeros(self.D.shape) # åˆå§‹åŒ–æ‹‰æ ¼æœ—æ—¥ä¹˜æ•°çŸ©é˜µ Y ä¸ºé›¶çŸ©é˜µ
 
-        # ÉèÖÃ¸üĞÂ²½³¤ ( ÈôÎª None£¬Ôò¸ù¾İÊäÈëÊı¾İµÄĞÎ×´×Ô¶¯¼ÆËã)
+        # è®¾ç½®æ›´æ–°æ­¥é•¿ ( è‹¥ä¸º Noneï¼Œåˆ™æ ¹æ®è¾“å…¥æ•°æ®çš„å½¢çŠ¶è‡ªåŠ¨è®¡ç®—)
         if mu: self.mu = mu
         else: self.mu = np.prod(self.D.shape) / (4 * np.linalg.norm(self.D, ord=1))
         self.mu_inv = 1 / self.mu
 
-        # ÕıÔò»¯²ÎÊı£¬ÓÃÓÚ¿ØÖÆÏ¡ÊèĞÔ
+        # æ­£åˆ™åŒ–å‚æ•°ï¼Œç”¨äºæ§åˆ¶ç¨€ç–æ€§
         if lmbda: self.lmbda = lmbda
         else: self.lmbda = 1 / np.sqrt(np.max(self.D.shape))
 
@@ -37,28 +37,28 @@ class R_pca:
     def frobenius_norm(M):
         return np.linalg.norm(M, ord='fro')
 
-    # ÈíãĞÖµ²Ù×÷ >>> Ê¹¾ØÕóÔªËØ°´Ò»¶¨ãĞÖµ tau ÊÕËõ¡£ÆäÄ¿µÄÊÇ½«½Ó½üÁãµÄÔªËØ¹éÁã£¬´Ó¶ø²úÉúÏ¡ÊèĞÔ
+    # è½¯é˜ˆå€¼æ“ä½œ >>> ä½¿çŸ©é˜µå…ƒç´ æŒ‰ä¸€å®šé˜ˆå€¼ tau æ”¶ç¼©ã€‚å…¶ç›®çš„æ˜¯å°†æ¥è¿‘é›¶çš„å…ƒç´ å½’é›¶ï¼Œä»è€Œäº§ç”Ÿç¨€ç–æ€§
     @staticmethod
     def shrink(M, tau):
         return np.sign(M) * np.maximum((np.abs(M) - tau), np.zeros(M.shape))
 
-    # 1) ¶Ô¾ØÕó½øĞĞÆæÒìÖµ·Ö½â; 2) ¶ÔÆæÒìÖµ½øĞĞÈíãĞÖµÊÕËõ; 3) ÖØ½¨»Ö¸´
+    # 1) å¯¹çŸ©é˜µè¿›è¡Œå¥‡å¼‚å€¼åˆ†è§£; 2) å¯¹å¥‡å¼‚å€¼è¿›è¡Œè½¯é˜ˆå€¼æ”¶ç¼©; 3) é‡å»ºæ¢å¤
     def svd_threshold(self, M, tau):
         U, S, V = np.linalg.svd(M, full_matrices=False)
         return np.dot(U, np.dot(np.diag(self.shrink(S, tau)), V))
 
-    # RPCA µÄºËĞÄËã·¨ £¨½« D ·Ö½âÎªµÍÖÈ¾ØÕó L ºÍ Ï¡Êè¾ØÕó S £©
+    # RPCA çš„æ ¸å¿ƒç®—æ³• ï¼ˆå°† D åˆ†è§£ä¸ºä½ç§©çŸ©é˜µ L å’Œ ç¨€ç–çŸ©é˜µ S ï¼‰
     def fit(self, tol=None, max_iter=1000, iter_print=100):
         iter = 0
         err = np.Inf
-        Sk = self.S     # Ï¡Êè¾ØÕó
-        Yk = self.Y     # ¾ßÌå¿´Ô­ÎÄ£¬ĞÂÒıÈëµÄ±äÁ¿
-        Lk = np.zeros(self.D.shape)     # µÍÖÈ¾ØÕó
+        Sk = self.S     # ç¨€ç–çŸ©é˜µ
+        Yk = self.Y     # å…·ä½“çœ‹åŸæ–‡ï¼Œæ–°å¼•å…¥çš„å˜é‡
+        Lk = np.zeros(self.D.shape)     # ä½ç§©çŸ©é˜µ
 
         if tol:
             _tol = tol
         else:
-            _tol = 1E-7 * self.frobenius_norm(self.D)   # µü´úÍ£Ö¹Ìõ¼ş£¨Ö®Ò»£©
+            _tol = 1E-7 * self.frobenius_norm(self.D)   # è¿­ä»£åœæ­¢æ¡ä»¶ï¼ˆä¹‹ä¸€ï¼‰
 
         #this loop implements the principal component pursuit (PCP) algorithm
         #located in the table on page 29 of https://arxiv.org/pdf/0912.3599.pdf

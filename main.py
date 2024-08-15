@@ -18,7 +18,7 @@ def doit(config):
     # prepare some core algorithms
     algorithm = FringeRemovalAlgorithm(image_processor)
 
-    # 获得初步的fringe pattern
+    # 鑾峰緱鍒濇鐨刦ringe pattern
     fimages = algorithm.raw_defringe(image_processor.images, mask=image_processor.chipmask,
                                      nxy=config.nxy, robust=config.robust,
                                      keep_background=config.keep_background)
